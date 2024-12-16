@@ -4,25 +4,40 @@ import { Button } from '../../components/ui/button';
 import { Input } from '../../components/ui/input';
 import AxiosClient from '../../api/axios';
 
-export default function AddCategory({ onCategoryAdded }) {
+export default function AddCategory({ onCategoryAdded, categories }) {
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [newCategory, setNewCategory] = useState({ name: '', image: null });
+  const [errorMessage, setErrorMessage] = useState('');
 
   const handleAddCategory = async (e) => {
     e.preventDefault();
+  
+    // Debugging logs
+    console.log('Adding category:', newCategory);
+  
+    // Vérifier si le nom de la catégorie existe déjà
+    if (categories.some(category => category.name.toLowerCase() === newCategory.name.toLowerCase())) {
+      setErrorMessage('Une catégorie avec ce nom existe déjà. Veuillez choisir un autre nom.');
+      return;
+    }
+  
     const formData = new FormData();
     formData.append('name', newCategory.name);
     if (newCategory.image) formData.append('image', newCategory.image);
-
+  
     try {
+      console.log('Sending request...');
       const response = await AxiosClient.post('/categories', formData, {
         headers: { 'Content-Type': 'multipart/form-data' },
       });
+      console.log('Response:', response);
       onCategoryAdded(response.data); // Appeler un callback pour mettre à jour les catégories
       setNewCategory({ name: '', image: null });
-      setIsAddDialogOpen(false);
+      setIsAddDialogOpen(false); // Fermer le dialogue
+      setErrorMessage('');
     } catch (error) {
       console.error('Erreur lors de l\'ajout de la catégorie:', error);
+      setErrorMessage('Une erreur est survenue lors de l\'ajout de la catégorie.');
     }
   };
 
@@ -48,6 +63,7 @@ export default function AddCategory({ onCategoryAdded }) {
             type="file"
             onChange={(e) => setNewCategory({ ...newCategory, image: e.target.files[0] })}
           />
+          {errorMessage && <p className="text-red-500">{errorMessage}</p>} {/* Affichage du message d'erreur */}
           <Button type="submit">Ajouter</Button>
         </form>
       </DialogContent>
