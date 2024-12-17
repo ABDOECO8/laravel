@@ -7,7 +7,7 @@ import ProductDelete from '../page/Products/ProductDelete';
 import ProductFilter from '../page/Products/ProductFilter';
 import ProductUpdate from '../page/Products/ProductUpdate';
 import ProductDetails from '../page/Products/ProductList';
-import { ArrowUpDown } from 'lucide-react'; // Icon for sorting
+import { ArrowUpDown } from 'lucide-react';
 
 export default function Product() {
   const [products, setProducts] = useState([]);
@@ -20,15 +20,71 @@ export default function Product() {
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [selectedProduct, setSelectedProduct] = useState(null);
   const [currentPage, setCurrentPage] = useState(1);
-  const [productsPerPage] = useState(5); // Number of products per page
-
-  // New state for sorting
+  const [productsPerPage] = useState(5);
   const [sortConfig, setSortConfig] = useState({
     key: null,
     direction: 'ascending'
   });
 
-  // Fetch products and categories
+  const [alert, setAlert] = useState({
+    show: false,
+    type: '',
+    message: ''
+  });
+
+  const showAlert = (type, message) => {
+    setAlert({ show: true, type, message });
+    setTimeout(() => {
+      setAlert({ show: false, type: '', message: '' });
+    }, 3000);
+  };
+
+  const renderAlert = () => {
+    if (!alert.show) return null;
+
+    const alertStyles = {
+      add: {
+        container: 'bg-blue-100 border-blue-400 text-blue-700',
+        header: 'bg-blue-500 text-white',
+        title: 'Ajout'
+      },
+      delete: {
+        container: 'bg-red-100 border-red-400 text-red-700',
+        header: 'bg-red-500 text-white',
+        title: 'Suppression'
+      },
+      update: {
+        container: 'bg-green-100 border-green-400 text-green-700',
+        header: 'bg-green-500 text-white',
+        title: 'Mise à jour'
+      },
+      error: {
+        container: 'bg-red-100 border-red-400 text-red-700',
+        header: 'bg-red-500 text-white',
+        title: 'Erreur'
+      }
+    }[alert.type];
+
+    return (
+      <div role="alert" className="fixed inset-x-0 top-4 z-50 flex justify-center">
+        <div className={`w-full max-w-md rounded shadow-lg ${alertStyles?.container}`}>
+          <div className={`${alertStyles?.header} font-bold rounded-t px-4 py-2`}>
+            {alertStyles?.title}
+          </div>
+          <div className={`border border-t-0 ${alertStyles?.container} rounded-b px-4 py-3`}>
+            <p>{alert.message}</p>
+            <button 
+              onClick={() => setAlert({ show: false, type: '', message: '' })}
+              className="absolute top-0 bottom-0 right-0 px-4 py-3"
+            >
+              ×
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  };
+
   const fetchData = async () => {
     try {
       const [productsResponse, categoriesResponse] = await Promise.all([
@@ -46,6 +102,7 @@ export default function Product() {
     } catch (error) {
       console.error('Error fetching data:', error);
       setError('An error occurred while fetching data');
+      showAlert('error', 'Erreur lors du chargement des données');
       setLoading(false);
     }
   };
@@ -54,25 +111,18 @@ export default function Product() {
     fetchData();
   }, []);
 
-  // Handle product filtering and sorting
   useEffect(() => {
     let results = products;
-
-    // Filter by search term
     if (searchTerm) {
       results = results.filter(product =>
         product.name.toLowerCase().includes(searchTerm.toLowerCase())
       );
     }
-
-    // Filter by category
     if (selectedCategory) {
       results = results.filter(product => 
         product.category_id === selectedCategory
       );
     }
-
-    // Sorting logic
     if (sortConfig.key) {
       results.sort((a, b) => {
         if (a[sortConfig.key] < b[sortConfig.key]) {
@@ -84,11 +134,9 @@ export default function Product() {
         return 0;
       });
     }
-
     setFilteredProducts(results);
   }, [searchTerm, selectedCategory, products, sortConfig]);
 
-  // Function to handle sorting
   const handleSort = (key) => {
     let direction = 'ascending';
     if (sortConfig.key === key && sortConfig.direction === 'ascending') {
@@ -97,42 +145,43 @@ export default function Product() {
     setSortConfig({ key, direction });
   };
 
-  // Handle product addition
   const handleProductAdded = (newProduct) => {
     const updatedProducts = [...products, newProduct];
     setProducts(updatedProducts);
     setFilteredProducts(updatedProducts);
     setIsAddDialogOpen(false);
+    showAlert('add', 'Produit ajouté avec succès');
   };
 
-  // Handle product deletion
   const handleProductDeleted = (productId) => {
     const updatedProducts = products.filter(prod => prod.id !== productId);
     setProducts(updatedProducts);
     setFilteredProducts(updatedProducts);
+    showAlert('delete', 'Produit supprimé avec succès');
   };
 
-  // Handle product update
   const handleProductUpdated = (updatedProduct) => {
     const updatedProducts = products.map(prod =>
       prod.id === updatedProduct.id ? updatedProduct : prod
     );
     setProducts(updatedProducts);
     setFilteredProducts(updatedProducts);
+    showAlert('update', 'Produit mis à jour avec succès');
   };
-
-  // Pagination logic
-  const indexOfLastProduct = currentPage * productsPerPage;
-  const indexOfFirstProduct = indexOfLastProduct - productsPerPage;
-  const currentProducts = filteredProducts.slice(indexOfFirstProduct, indexOfLastProduct);
 
   const paginate = (pageNumber) => setCurrentPage(pageNumber);
 
   if (loading) return <div>Loading...</div>;
   if (error) return <div>{error}</div>;
 
+  const indexOfLastProduct = currentPage * productsPerPage;
+  const indexOfFirstProduct = indexOfLastProduct - productsPerPage;
+  const currentProducts = filteredProducts.slice(indexOfFirstProduct, indexOfLastProduct);
+
   return (
     <div className="container mx-auto mt-10 p-6 bg-gradient-to-r from-blue-400 via-blue-500 to-blue-600 rounded-xl shadow-lg">
+      {renderAlert()}
+
       <div className="flex justify-between items-center mb-6">
         <h1 className="text-3xl font-semibold text-white">Produits</h1>
 
@@ -142,7 +191,6 @@ export default function Product() {
             onSearchChange={setSearchTerm} 
           />
           
-          {/* Category filter */}
           <Select 
             value={selectedCategory}
             onValueChange={(value) => setSelectedCategory(value === 'all' ? null : Number(value))}
@@ -172,7 +220,6 @@ export default function Product() {
         </div>
       </div>
       
-      {/* Product Table */}
       <Table className="shadow-md rounded-lg overflow-hidden bg-white">
         <TableHeader className="bg-blue-300 text-white">
           <TableRow>
@@ -220,6 +267,7 @@ export default function Product() {
                   <ProductDelete 
                     productId={product.id}
                     onProductDeleted={handleProductDeleted}
+                    productName={product.name}
                   />
                   <button
                     onClick={() => setSelectedProduct(product)}
@@ -234,7 +282,6 @@ export default function Product() {
         </TableBody>
       </Table>
 
-      {/* Pagination */}
       <div className="flex justify-center mt-6">
         {Array.from({ length: Math.ceil(filteredProducts.length / productsPerPage) }, (_, index) => (
           <button

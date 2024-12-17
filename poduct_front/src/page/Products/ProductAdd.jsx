@@ -94,7 +94,6 @@ export default function ProductAdd({ categories, onProductAdded, isOpen, onOpenC
         image: null 
       });
 
-      setSuccessMessage('Le produit a été ajouté avec succès !'); // Afficher le message de succès
       onOpenChange(false); // Fermer le dialogue après l'ajout réussi
     } catch (error) {
       console.error('Erreur lors de l\'ajout:', error);
