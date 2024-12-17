@@ -5,6 +5,7 @@ import { Button } from '../../components/ui/button';
 import { Input } from '../../components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../../components/ui/select';
 import { Plus } from 'lucide-react';
+import ImageUploadPreview from '../../components/ImageUploadPreview';
 
 export default function ProductAdd({ categories, onProductAdded, isOpen, onOpenChange }) {
   const [newProduct, setNewProduct] = useState({ 
@@ -16,11 +17,64 @@ export default function ProductAdd({ categories, onProductAdded, isOpen, onOpenC
     image: null 
   });
 
+  const [errorMessage, setErrorMessage] = useState('');
+
   const handleAddProduct = async (e) => {
     e.preventDefault();
+    setErrorMessage(''); // Réinitialiser le message d'erreur avant chaque soumission
+
+    // Validation des champs
+    if (!newProduct.name.trim()) {
+      setErrorMessage('Le nom du produit ne peut pas être vide.');
+      return;
+    }
+
+    if (parseFloat(newProduct.price) <= 0) {
+      setErrorMessage('Le prix du produit doit être supérieur à 0.');
+      return;
+    }
+
+    if (parseInt(newProduct.stock) <= 0) {
+      setErrorMessage('La quantité en stock doit être supérieure à 0.');
+      return;
+    }
+
+    if (!newProduct.category_id) {
+      setErrorMessage('La catégorie du produit doit être sélectionnée.');
+      return;
+    }
+
+    // Vérification si le produit existe déjà dans la même catégorie
+    try {
+      const response = await AxiosClient.get('/products', {
+        params: {
+          name: newProduct.name,
+          category_id: newProduct.category_id
+        }
+      });
+
+      // Vérifier si le tableau de réponse est réellement non vide
+      if (response.data && response.data.length > 0) {
+        // Vérifier si le produit existe exactement avec le même nom et catégorie
+        const existingProduct = response.data.find(
+          product => 
+            product.name.toLowerCase().trim() === newProduct.name.toLowerCase().trim() && 
+            product.category_id.toString() === newProduct.category_id.toString()
+        );
+
+        if (existingProduct) {
+          setErrorMessage('Un produit avec le même nom existe déjà dans cette catégorie.');
+          return;
+        }
+      }
+    } catch (error) {
+      console.error('Erreur lors de la vérification du produit existant:', error);
+      // Ne pas bloquer l'ajout en cas d'erreur de vérification
+    }
+
     const formData = new FormData();
-    
-    // Append all product details to FormData
+
+    // Ajouter tous les détails du produit au FormData
     Object.keys(newProduct).forEach(key => {
       if (newProduct[key] !== null && newProduct[key] !== '') {
         formData.append(key, newProduct[key]);
@@ -32,10 +86,10 @@ export default function ProductAdd({ categories, onProductAdded, isOpen, onOpenC
         headers: { 'Content-Type': 'multipart/form-data' }
       });
       
-      // Call the callback to update parent component
+      // Appeler le callback pour mettre à jour le composant parent
       onProductAdded(response.data);
       
-      // Reset form
+      // Réinitialiser le formulaire
       setNewProduct({ 
         name: '', 
         price: '', 
@@ -44,10 +98,12 @@ export default function ProductAdd({ categories, onProductAdded, isOpen, onOpenC
         category_id: '', 
         image: null 
       });
+
+      // Fermer le dialogue après l'ajout réussi
+      onOpenChange(false);
     } catch (error) {
       console.error('Erreur lors de l\'ajout:', error);
-      // Consider adding error handling mechanism
-      throw error;
+      setErrorMessage('Une erreur est survenue lors de l\'ajout du produit.');
     }
   };
 
@@ -74,7 +130,8 @@ export default function ProductAdd({ categories, onProductAdded, isOpen, onOpenC
             required 
           />
           <Input 
-            type="text" 
+            type="number" 
+            step="0.01"
             placeholder="Prix du produit" 
             value={newProduct.price} 
             onChange={(e) => setNewProduct({...newProduct, price: e.target.value})} 
@@ -114,10 +171,13 @@ export default function ProductAdd({ categories, onProductAdded, isOpen, onOpenC
             </SelectContent>
           </Select>
 
-          <Input 
-            type="file" 
-            onChange={(e) => setNewProduct({...newProduct, image: e.target.files[0]})} 
+          <ImageUploadPreview 
+            onFileSelect={(files) => setNewProduct({...newProduct, image: files[0]})} 
+            maxFiles={1} 
+            maxSizeInMB={5} 
           />
+          
+          {errorMessage && <p className="text-red-500">{errorMessage}</p>}
           <Button type="submit">Ajouter</Button>
         </form>
       </DialogContent>

@@ -3,6 +3,7 @@ import { Dialog, DialogTrigger, DialogContent, DialogHeader, DialogTitle, Dialog
 import { Button } from '../../components/ui/button';
 import { Input } from '../../components/ui/input';
 import AxiosClient from '../../api/axios';
+import ImageUploadPreview from '../../components/ImageUploadPreview';
 
 export default function AddCategory({ onCategoryAdded, categories }) {
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
@@ -12,8 +13,11 @@ export default function AddCategory({ onCategoryAdded, categories }) {
   const handleAddCategory = async (e) => {
     e.preventDefault();
   
-    // Debugging logs
-    console.log('Adding category:', newCategory);
+    // Vérifier si le nom de la catégorie est vide
+    if (!newCategory.name.trim()) {
+      setErrorMessage('Le nom de la catégorie ne peut pas être vide.');
+      return;
+    }
   
     // Vérifier si le nom de la catégorie existe déjà
     if (categories.some(category => category.name.toLowerCase() === newCategory.name.toLowerCase())) {
@@ -26,18 +30,16 @@ export default function AddCategory({ onCategoryAdded, categories }) {
     if (newCategory.image) formData.append('image', newCategory.image);
   
     try {
-      console.log('Sending request...');
       const response = await AxiosClient.post('/categories', formData, {
         headers: { 'Content-Type': 'multipart/form-data' },
       });
-      console.log('Response:', response);
       onCategoryAdded(response.data); // Appeler un callback pour mettre à jour les catégories
       setNewCategory({ name: '', image: null });
       setIsAddDialogOpen(false); // Fermer le dialogue
       setErrorMessage('');
     } catch (error) {
-      console.error('Erreur lors de l\'ajout de la catégorie:', error);
       setErrorMessage('Une erreur est survenue lors de l\'ajout de la catégorie.');
+      console.error('Erreur lors de l\'ajout de la catégorie:', error);
     }
   };
 
@@ -59,10 +61,13 @@ export default function AddCategory({ onCategoryAdded, categories }) {
             onChange={(e) => setNewCategory({ ...newCategory, name: e.target.value })}
             required
           />
-          <Input
-            type="file"
-            onChange={(e) => setNewCategory({ ...newCategory, image: e.target.files[0] })}
+          
+          <ImageUploadPreview 
+            onFileSelect={(files) => setNewCategory({ ...newCategory, image: files[0] })} 
+            maxFiles={1} 
+            maxSizeInMB={5} 
           />
+          
           {errorMessage && <p className="text-red-500">{errorMessage}</p>} {/* Affichage du message d'erreur */}
           <Button type="submit">Ajouter</Button>
         </form>
