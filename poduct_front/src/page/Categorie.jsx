@@ -12,6 +12,8 @@ export default function Categorie() {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCategory, setSelectedCategory] = useState(null);
   const [sortDirection, setSortDirection] = useState('asc');
+  const [currentPage, setCurrentPage] = useState(1);
+  const [categoriesPerPage] = useState(5); // Number of categories per page
 
   useEffect(() => {
     const fetchCategories = async () => {
@@ -44,7 +46,6 @@ export default function Categorie() {
 
   const handleCategoryAdded = (newCategory) => {
     setCategories([...categories, newCategory]);
-    alert(`La catégorie "${newCategory.name}" a été ajoutée avec succès!`);
   };
 
   const handleCategoryUpdated = (updatedCategory) => {
@@ -55,12 +56,18 @@ export default function Categorie() {
 
   const handleCategoryDeleted = (id) => {
     setCategories(categories.filter((cat) => cat.id !== id));
-    alert('La catégorie a été supprimée avec succès!');
   };
 
   const toggleSortDirection = () => {
     setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc');
   };
+
+  // Pagination logic
+  const indexOfLastCategory = currentPage * categoriesPerPage;
+  const indexOfFirstCategory = indexOfLastCategory - categoriesPerPage;
+  const currentCategories = filteredCategories.slice(indexOfFirstCategory, indexOfLastCategory);
+
+  const paginate = (pageNumber) => setCurrentPage(pageNumber);
 
   return (
     <div className="container mx-auto mt-10 p-6 bg-gradient-to-r from-blue-400 via-blue-500 to-blue-600 rounded-xl shadow-lg">
@@ -87,7 +94,7 @@ export default function Categorie() {
           </TableRow>
         </TableHeader>
         <TableBody>
-          {filteredCategories.map((category) => (
+          {currentCategories.map((category) => (
             <TableRow key={category.id} className="border-b border-gray-200">
               <TableCell className="px-6 py-4">{category.id}</TableCell>
               <TableCell className="px-6 py-4 text-lg font-medium text-gray-900">{category.name}</TableCell>
@@ -106,7 +113,7 @@ export default function Categorie() {
                     className="text-gray-500 hover:text-gray-700"
                     onClick={() => setSelectedCategory(category)}
                   >
-                    <span className="text-xl">...</span>
+                    Détails
                   </button>
                 </div>
               </TableCell>
@@ -114,6 +121,19 @@ export default function Categorie() {
           ))}
         </TableBody>
       </Table>
+
+      {/* Pagination */}
+      <div className="flex justify-center mt-6">
+        {Array.from({ length: Math.ceil(filteredCategories.length / categoriesPerPage) }, (_, index) => (
+          <button
+            key={index + 1}
+            onClick={() => paginate(index + 1)}
+            className={`mx-1 px-3 py-1 rounded ${index + 1 === currentPage ? 'bg-blue-700 text-white' : 'bg-white text-blue-700 border border-blue-700'}`}
+          >
+            {index + 1}
+          </button>
+        ))}
+      </div>
 
       {selectedCategory && (
         <ListerCategorie

@@ -19,6 +19,8 @@ export default function Product() {
   const [selectedCategory, setSelectedCategory] = useState(null);
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [selectedProduct, setSelectedProduct] = useState(null);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [productsPerPage] = useState(5); // Number of products per page
 
   // New state for sorting
   const [sortConfig, setSortConfig] = useState({
@@ -119,6 +121,13 @@ export default function Product() {
     setFilteredProducts(updatedProducts);
   };
 
+  // Pagination logic
+  const indexOfLastProduct = currentPage * productsPerPage;
+  const indexOfFirstProduct = indexOfLastProduct - productsPerPage;
+  const currentProducts = filteredProducts.slice(indexOfFirstProduct, indexOfLastProduct);
+
+  const paginate = (pageNumber) => setCurrentPage(pageNumber);
+
   if (loading) return <div>Loading...</div>;
   if (error) return <div>{error}</div>;
 
@@ -193,7 +202,7 @@ export default function Product() {
           </TableRow>
         </TableHeader>
         <TableBody>
-          {filteredProducts.map((product) => (
+          {currentProducts.map((product) => (
             <TableRow key={product.id} className="border-b border-gray-200">
               <TableCell className="px-6 py-4">{product.id}</TableCell>
               <TableCell className="px-6 py-4">{product.name}</TableCell>
@@ -224,6 +233,19 @@ export default function Product() {
           ))}
         </TableBody>
       </Table>
+
+      {/* Pagination */}
+      <div className="flex justify-center mt-6">
+        {Array.from({ length: Math.ceil(filteredProducts.length / productsPerPage) }, (_, index) => (
+          <button
+            key={index + 1}
+            onClick={() => paginate(index + 1)}
+            className={`mx-1 px-3 py-1 rounded ${index + 1 === currentPage ? 'bg-blue-700 text-white' : 'bg-white text-blue-700 border border-blue-700'}`}
+          >
+            {index + 1}
+          </button>
+        ))}
+      </div>
 
       {selectedProduct && (
         <ProductDetails

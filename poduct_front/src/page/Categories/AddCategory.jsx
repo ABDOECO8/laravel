@@ -9,6 +9,7 @@ export default function AddCategory({ onCategoryAdded, categories }) {
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [newCategory, setNewCategory] = useState({ name: '', image: null });
   const [errorMessage, setErrorMessage] = useState('');
+  const [successMessage, setSuccessMessage] = useState(''); // Nouvel état pour le message de succès
 
   const handleAddCategory = async (e) => {
     e.preventDefault();
@@ -16,12 +17,14 @@ export default function AddCategory({ onCategoryAdded, categories }) {
     // Vérifier si le nom de la catégorie est vide
     if (!newCategory.name.trim()) {
       setErrorMessage('Le nom de la catégorie ne peut pas être vide.');
+      setSuccessMessage(''); // Réinitialiser le message de succès
       return;
     }
   
     // Vérifier si le nom de la catégorie existe déjà
     if (categories.some(category => category.name.toLowerCase() === newCategory.name.toLowerCase())) {
       setErrorMessage('Une catégorie avec ce nom existe déjà. Veuillez choisir un autre nom.');
+      setSuccessMessage(''); // Réinitialiser le message de succès
       return;
     }
   
@@ -37,41 +40,53 @@ export default function AddCategory({ onCategoryAdded, categories }) {
       setNewCategory({ name: '', image: null });
       setIsAddDialogOpen(false); // Fermer le dialogue
       setErrorMessage('');
+      setSuccessMessage(`La catégorie "${newCategory.name}" a été ajoutée avec succès!`); // Message de succès
     } catch (error) {
       setErrorMessage('Une erreur est survenue lors de l\'ajout de la catégorie.');
+      setSuccessMessage(''); // Réinitialiser le message de succès
       console.error('Erreur lors de l\'ajout de la catégorie:', error);
     }
   };
 
   return (
-    <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
-      <DialogTrigger asChild>
-        <Button variant="outline">Ajouter une catégorie</Button>
-      </DialogTrigger>
-      <DialogContent>
-        <DialogHeader>
-          <DialogTitle>Ajouter une nouvelle catégorie</DialogTitle>
-          <DialogDescription>Remplissez les informations ci-dessous.</DialogDescription>
-        </DialogHeader>
-        <form onSubmit={handleAddCategory} className="space-y-4">
-          <Input
-            type="text"
-            placeholder="Nom de la catégorie"
-            value={newCategory.name}
-            onChange={(e) => setNewCategory({ ...newCategory, name: e.target.value })}
-            required
-          />
-          
-          <ImageUploadPreview 
-            onFileSelect={(files) => setNewCategory({ ...newCategory, image: files[0] })} 
-            maxFiles={1} 
-            maxSizeInMB={5} 
-          />
-          
-          {errorMessage && <p className="text-red-500">{errorMessage}</p>} {/* Affichage du message d'erreur */}
-          <Button type="submit">Ajouter</Button>
-        </form>
-      </DialogContent>
-    </Dialog>
+    <div>
+      {/* Afficher le message de succès si présent */}
+      {successMessage && (
+        <div className="bg-blue-100 border-t border-b border-blue-500 text-blue-700 px-4 py-3" role="alert">
+          <p className="font-bold">Succès</p>
+          <p className="text-sm">{successMessage}</p>
+        </div>
+      )}
+
+      <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
+        <DialogTrigger asChild>
+          <Button variant="outline">Ajouter une catégorie</Button>
+        </DialogTrigger>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Ajouter une nouvelle catégorie</DialogTitle>
+            <DialogDescription>Remplissez les informations ci-dessous.</DialogDescription>
+          </DialogHeader>
+          <form onSubmit={handleAddCategory} className="space-y-4">
+            <Input
+              type="text"
+              placeholder="Nom de la catégorie"
+              value={newCategory.name}
+              onChange={(e) => setNewCategory({ ...newCategory, name: e.target.value })}
+              required
+            />
+            
+            <ImageUploadPreview 
+              onFileSelect={(files) => setNewCategory({ ...newCategory, image: files[0] })} 
+              maxFiles={1} 
+              maxSizeInMB={5} 
+            />
+            
+            {errorMessage && <p className="text-red-500">{errorMessage}</p>} {/* Affichage du message d'erreur */}
+            <Button type="submit">Ajouter</Button>
+          </form>
+        </DialogContent>
+      </Dialog>
+    </div>
   );
 }
