@@ -22,7 +22,7 @@ export const router = createBrowserRouter([
         element: <Product />
       },
       {
-        path: '*',
+        path: '/*',
         element: <NotFound />
       }
     ]

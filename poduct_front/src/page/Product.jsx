@@ -183,7 +183,7 @@ export default function Product() {
       {renderAlert()}
 
       <div className="flex justify-between items-center mb-6">
-        <h1 className="text-3xl font-semibold text-white">Produits</h1>
+        <h1 className="text-3xl font-semibold text-white">Liste des Produits</h1>
 
         <div className="flex items-center space-x-4">
           <ProductFilter 

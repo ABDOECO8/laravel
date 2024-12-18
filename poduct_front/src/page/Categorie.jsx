@@ -76,7 +76,7 @@ export default function Categorie() {
     return (
       <div 
         role="alert" 
-        className="fixed inset-x-0 top-4 z-50 flex justify-center"
+        className="fixed inset-x-0 top-4 z-50 flex "
       >
         <div className={`w-full max-w-md rounded shadow-lg ${alertStyles.container}`}>
           <div className={`${alertStyles.header} font-bold rounded-t px-4 py-2`}>
